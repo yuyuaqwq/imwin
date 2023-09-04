@@ -14,5 +14,10 @@
 void ImGuiInit(ImGuiIO* io);
 void ImGuiUpdate(ImGuiIO* io);
 
+namespace ImGuiEx {
+    HWND FindWindowHwndByName(const char* name);
+    void SetWindowsTop(ImGuiWindow* window, bool top);
+} // ImGuiEx
+
 
 #endif // IMGUI_IMPORT_WIN32_H_
