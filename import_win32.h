@@ -15,8 +15,10 @@ void ImGuiInit(ImGuiIO* io);
 void ImGuiUpdate(ImGuiIO* io);
 
 namespace ImGuiEx {
-    HWND FindWindowHwndByName(const char* name);
-    void SetWindowsTop(ImGuiWindow* window, bool top);
+
+bool SetWindowsTop(ImGuiWindow* window, bool top);
+void ExitApplication();
+
 } // ImGuiEx
 
 

@@ -16,25 +16,46 @@ void ImGuiUpdate(ImGuiIO* io);
 
 #include <tchar.h>
 
-
+static bool gs_exit_application = false;
 namespace ImGuiEx {
-    HWND FindWindowHwndByName(const char* name) {
-        auto windows = ImGui::FindWindowByName("sb");
-        HWND hwnd = nullptr;
-        if (windows) {
-            hwnd = (HWND)windows->Viewport->PlatformHandle;
-        }
-        return hwnd;
-    }
 
-    //void SetWindowsTop(ImGuiWindow* window, bool top) {
-    //    if (top) {
-    //        window->Viewport->Flags |= ImGuiViewportFlags_TopMost;
-    //    }
-    //    else {
-    //        window->Viewport->Flags &= (~ImGuiViewportFlags_TopMost);
-    //    }
+namespace internal {
+
+HWND GetWindowHwnd(ImGuiWindow* window) {
+    if (window == nullptr) return NULL;
+    return (HWND)window->Viewport->PlatformHandle;
+}
+
+HWND FindWindowHwndByName(const char* name) {
+    auto window = ImGui::FindWindowByName("sb");
+    return GetWindowHwnd(window);
+}
+
+
+} // internal
+
+void ExitApplication() {
+    gs_exit_application = true;
+}
+
+bool SetWindowsTop(ImGuiWindow* window, bool top) {
+    //if (top) {
+    //    window->Viewport->Flags |= ImGuiViewportFlags_TopMost;
     //}
+    //else {
+    //    window->Viewport->Flags &= (~ImGuiViewportFlags_TopMost);
+    //}
+    HWND hwnd = internal::GetWindowHwnd(window);
+    if (hwnd == NULL) return false;
+
+    if (top) {
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+    else {
+        SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+    return true;
+}
 
 } // ImGuiEx
 
@@ -199,6 +220,10 @@ int WinMain(
 
         g_pSwapChain->Present(1, 0); // Present with vsync
         //g_pSwapChain->Present(0, 0); // Present without vsync
+
+        if (gs_exit_application) {
+            break;
+        }
     }
 
     // Cleanup
