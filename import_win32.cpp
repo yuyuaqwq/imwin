@@ -55,6 +55,10 @@ bool SetWindowTop(ImGuiWindow* window, bool top) {
     return true;
 }
 
+void SlowDown() {
+    Sleep(10);
+}
+
 } // namespace ImGuiEx
 
 

@@ -19,6 +19,7 @@ namespace ImGuiEx {
 
 void ExitApplication();
 bool SetWindowTop(ImGuiWindow* window, bool top);
+void SlowDown();
 
 } // namespace ImGuiEx
 
