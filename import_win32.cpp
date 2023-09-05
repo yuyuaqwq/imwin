@@ -1,3 +1,5 @@
+#include <unordered_map>
+
 #include <imgui/imgui.cpp>
 #include <imgui/imgui_draw.cpp>
 #include <imgui/imgui_tables.cpp>
@@ -32,6 +34,8 @@ HWND FindWindowHwndByName(const char* name) {
 }
 } // namespace internal
 
+static std::unordered_map<std::string, bool>* gs_window_init_map = nullptr;
+
 void ExitApplication() {
     gs_exit_application = true;
 }
@@ -57,6 +61,26 @@ bool SetWindowTop(ImGuiWindow* window, bool top) {
 
 void SlowDown() {
     Sleep(10);
+}
+
+
+bool Begin(const char* name, bool* p_open, ImGuiWindowFlags flags) {
+    if (gs_window_init_map == nullptr) {
+        gs_window_init_map = new std::unordered_map<std::string, bool>;
+    }
+    auto res = gs_window_init_map->find(name);
+    if (res == gs_window_init_map->end()) {
+        gs_window_init_map->insert(std::make_pair(std::string(name), false));
+    }
+    else if (res->second == false) {
+        auto window = ImGui::FindWindowByName(name);
+        (*gs_window_init_map)[name] = ImGuiEx::SetWindowTop(window, false);
+    }
+    return ImGui::Begin(name, p_open, flags);
+}
+
+void End() {
+    ImGui::End();
 }
 
 } // namespace ImGuiEx
