@@ -40,23 +40,24 @@ void ExitApplication() {
     gs_exit_application = true;
 }
 
-bool SetWindowTop(ImGuiWindow* window, bool top) {
+void SetWindowTop(bool* top) {
     //if (top) {
     //    window->Viewport->Flags |= ImGuiViewportFlags_TopMost;
     //}
     //else {
     //    window->Viewport->Flags &= (~ImGuiViewportFlags_TopMost);
     //}
+    *top = true;
+    ImGuiWindow* window = ImGui::GetCurrentWindow();
     HWND hwnd = internal::GetWindowHwnd(window);
-    if (hwnd == NULL) return false;
+    if (hwnd == NULL) return;
 
-    if (top) {
+    if (*top) {
         SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
     else {
         SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
     }
-    return true;
 }
 
 void SlowDown() {
@@ -74,7 +75,9 @@ bool Begin(const char* name, bool* p_open, ImGuiWindowFlags flags) {
     }
     else if (res->second == false) {
         auto window = ImGui::FindWindowByName(name);
-        (*gs_window_init_map)[name] = ImGuiEx::SetWindowTop(window, false);
+        bool top = false;
+        ImGuiEx::SetWindowTop(&top);
+        (*gs_window_init_map)[name] = !top;
     }
     return ImGui::Begin(name, p_open, flags);
 }

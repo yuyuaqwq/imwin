@@ -18,7 +18,7 @@ void ImGuiExit();
 namespace ImGuiEx {
 
 void ExitApplication();
-bool SetWindowTop(ImGuiWindow* window, bool top);
+bool SetWindowTop(bool* top);
 void SlowDown();
 
 bool Begin(const char* name, bool* p_open = nullptr, ImGuiWindowFlags flags = 0);
