@@ -11,8 +11,8 @@
 #include <imgui/backends/imgui_impl_dx11.h>
 #include <d3d11.h>
 
-void ImGuiInit(ImGuiIO* io);
-void ImGuiUpdate(ImGuiIO* io);
+void ImGuiInit();
+void ImGuiUpdate();
 
 namespace ImGuiEx {
 

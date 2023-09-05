@@ -7,8 +7,8 @@
 
 #pragma comment(lib, "D3D11.lib")
 
-void ImGuiInit(ImGuiIO* io);
-void ImGuiUpdate(ImGuiIO* io);
+void ImGuiInit();
+void ImGuiUpdate();
 
 // Dear ImGui: standalone example application for DirectX 11
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
@@ -133,7 +133,7 @@ int WinMain(
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
 
-    ImGuiInit(&io);
+    ImGuiInit();
 
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
@@ -201,7 +201,7 @@ int WinMain(
         ImGui::NewFrame();
 
 
-        ImGuiUpdate(&io);
+        ImGuiUpdate();
 
 
         // Rendering
