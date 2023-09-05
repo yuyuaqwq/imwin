@@ -9,6 +9,7 @@
 
 void ImGuiInit();
 void ImGuiUpdate();
+void ImGuiExit();
 
 // Dear ImGui: standalone example application for DirectX 11
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
@@ -225,6 +226,8 @@ int WinMain(
             break;
         }
     }
+
+    ImGuiExit();
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();

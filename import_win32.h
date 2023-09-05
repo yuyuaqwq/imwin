@@ -13,6 +13,7 @@
 
 void ImGuiInit();
 void ImGuiUpdate();
+void ImGuiExit();
 
 namespace ImGuiEx {
 
