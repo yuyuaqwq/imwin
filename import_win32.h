@@ -17,10 +17,10 @@ void ImGuiExit();
 
 namespace ImGuiEx {
 
-bool SetWindowsTop(ImGuiWindow* window, bool top);
 void ExitApplication();
+bool SetWindowTop(ImGuiWindow* window, bool top);
 
-} // ImGuiEx
+} // namespace ImGuiEx
 
 
 #endif // IMGUI_IMPORT_WIN32_H_

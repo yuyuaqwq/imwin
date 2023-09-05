@@ -7,10 +7,6 @@
 
 #pragma comment(lib, "D3D11.lib")
 
-void ImGuiInit();
-void ImGuiUpdate();
-void ImGuiExit();
-
 // Dear ImGui: standalone example application for DirectX 11
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
@@ -18,28 +14,29 @@ void ImGuiExit();
 #include <tchar.h>
 
 static bool gs_exit_application = false;
+
+void ImGuiInit();
+void ImGuiUpdate();
+void ImGuiExit();
+
 namespace ImGuiEx {
 
 namespace internal {
-
 HWND GetWindowHwnd(ImGuiWindow* window) {
     if (window == nullptr) return NULL;
     return (HWND)window->Viewport->PlatformHandle;
 }
-
 HWND FindWindowHwndByName(const char* name) {
     auto window = ImGui::FindWindowByName("sb");
     return GetWindowHwnd(window);
 }
-
-
-} // internal
+} // namespace internal
 
 void ExitApplication() {
     gs_exit_application = true;
 }
 
-bool SetWindowsTop(ImGuiWindow* window, bool top) {
+bool SetWindowTop(ImGuiWindow* window, bool top) {
     //if (top) {
     //    window->Viewport->Flags |= ImGuiViewportFlags_TopMost;
     //}
@@ -58,7 +55,7 @@ bool SetWindowsTop(ImGuiWindow* window, bool top) {
     return true;
 }
 
-} // ImGuiEx
+} // namespace ImGuiEx
 
 
 // Data
