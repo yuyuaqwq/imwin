@@ -47,10 +47,13 @@ void SetWindowTop(bool* top) {
     //else {
     //    window->Viewport->Flags &= (~ImGuiViewportFlags_TopMost);
     //}
-    *top = true;
+    
     ImGuiWindow* window = ImGui::GetCurrentWindow();
     HWND hwnd = internal::GetWindowHwnd(window);
-    if (hwnd == NULL) return;
+    if (hwnd == NULL) {
+        *top = true;
+        return;
+    }
 
     if (*top) {
         SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
