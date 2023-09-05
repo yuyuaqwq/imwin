@@ -72,6 +72,15 @@ int main(int, char**)
     //io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleFonts;     // FIXME-DPI: Experimental. THIS CURRENTLY DOESN'T WORK AS EXPECTED. DON'T USE IN USER APP!
     //io.ConfigFlags |= ImGuiConfigFlags_DpiEnableScaleViewports; // FIXME-DPI: Experimental.
 
+    float baseFontSize = 20.0f;
+    ImFont* font = io.Fonts->AddFontFromFileTTF
+    (
+        "c:/windows/fonts/msyh.ttc",
+        baseFontSize,
+        nullptr,
+        io.Fonts->GetGlyphRangesChineseFull()
+    );
+
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsLight();
