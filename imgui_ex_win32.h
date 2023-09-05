@@ -1,5 +1,5 @@
-#ifndef IMGUI_IMPORT_WIN32_H_
-#define IMGUI_IMPORT_WIN32_H_
+#ifndef IMGUI_IMGUI_EX_WIN32_H_
+#define IMGUI_IMGUI_EX_WIN32_H_
 
 #include <imgui/imgui.h>
 #include <imgui/imconfig.h>
@@ -27,4 +27,4 @@ void End();
 } // namespace ImGuiEx
 
 
-#endif // IMGUI_IMPORT_WIN32_H_
+#endif // IMGUI_IMGUI_EX_WIN32_H_
