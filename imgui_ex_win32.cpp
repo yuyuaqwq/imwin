@@ -30,8 +30,23 @@ HWND GetWindowHwnd(ImGuiWindow* window) {
     return (HWND)window->Viewport->PlatformHandle;
 }
 HWND FindWindowHwndByName(const char* name) {
-    auto window = ImGui::FindWindowByName("sb");
+    auto window = ImGui::FindWindowByName(name);
     return GetWindowHwnd(window);
+}
+bool SetWindowTop(ImGuiWindow* window, bool top) {
+    //ImGuiWindow* window = ImGui::GetCurrentWindow();
+    HWND hwnd = internal::GetWindowHwnd(window);
+    if (hwnd == NULL) {
+        return false;
+    }
+
+    if (top) {
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+    else {
+        SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    }
+    return true;
 }
 } // namespace internal
 
@@ -41,28 +56,14 @@ void ExitApplication() {
     gs_exit_application = true;
 }
 
-void SetWindowTop(bool* top) {
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    HWND hwnd = internal::GetWindowHwnd(window);
-    if (hwnd == NULL) {
-        *top = true;
-        return;
-    }
 
-    if (*top) {
-        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    }
-    else {
-        SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    }
-}
 
 void SlowDown() {
     Sleep(10);
 }
 
 
-bool Begin(const char* name, bool* p_open, ImGuiWindowFlags flags) {
+bool Begin(const char* name, bool* p_open, ImGuiWindowFlags flags, bool top) {
     if (gs_window_init_map == nullptr) {
         gs_window_init_map = new std::unordered_map<std::string, bool>;
     }
@@ -72,9 +73,7 @@ bool Begin(const char* name, bool* p_open, ImGuiWindowFlags flags) {
     }
     else if (res->second == false) {
         auto window = ImGui::FindWindowByName(name);
-        bool top = false;
-        ImGuiEx::SetWindowTop(&top);
-        (*gs_window_init_map)[name] = !top;
+        (*gs_window_init_map)[name] = internal::SetWindowTop(window, top);
     }
     return ImGui::Begin(name, p_open, flags);
 }

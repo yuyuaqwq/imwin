@@ -21,7 +21,7 @@ void ExitApplication();
 bool SetWindowTop(bool* top);
 void SlowDown();
 
-bool Begin(const char* name, bool* p_open = nullptr, ImGuiWindowFlags flags = 0);
+bool Begin(const char* name, bool* p_open = nullptr, ImGuiWindowFlags flags = 0, bool top = false);
 void End();
 
 } // namespace ImGuiEx
