@@ -1,14 +1,16 @@
-#include <unordered_map>
-#include <string>
-
 #include <imgui/imgui.cpp>
 #include <imgui/imgui_draw.cpp>
 #include <imgui/imgui_tables.cpp>
 #include <imgui/imgui_widgets.cpp>
-#include <imgui/backends/imgui_impl_win32.cpp>
-#include <imgui/backends/imgui_impl_dx11.cpp>
 
+#include <imgui/backends/imgui_impl_dx11.cpp>
+#include <imgui/backends/imgui_impl_win32.cpp>
+
+#include <d3d11.h>
 #pragma comment(lib, "D3D11.lib")
+
+#define IMGUI_EX_CPP
+#include <imgui_ex/imgui_ex_win32.h>
 
 // Dear ImGui: standalone example application for DirectX 11
 // If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
@@ -18,69 +20,18 @@
 
 static bool gs_exit_application = false;
 
-void ImGuiInit();
-void ImGuiUpdate();
-void ImGuiExit();
 
 namespace ImGuiEx {
-
-namespace internal {
-HWND GetWindowHwnd(ImGuiWindow* window) {
-    if (window == nullptr) return NULL;
-    return (HWND)window->Viewport->PlatformHandle;
-}
-HWND FindWindowHwndByName(const char* name) {
-    auto window = ImGui::FindWindowByName(name);
-    return GetWindowHwnd(window);
-}
-bool SetWindowTop(ImGuiWindow* window, bool top) {
-    //ImGuiWindow* window = ImGui::GetCurrentWindow();
-    HWND hwnd = internal::GetWindowHwnd(window);
-    if (hwnd == NULL) {
-        return false;
-    }
-
-    if (top) {
-        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    }
-    else {
-        SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    }
-    return true;
-}
-} // namespace internal
-
-static std::unordered_map<std::string, bool>* gs_window_init_map = nullptr;
 
 void ExitApplication() {
     gs_exit_application = true;
 }
 
-
-
 void SlowDown() {
+    // 不清楚d3d11锁帧的方法，用Sleep先缓解
     Sleep(10);
 }
 
-
-bool Begin(const char* name, bool* p_open, ImGuiWindowFlags flags, bool top) {
-    if (gs_window_init_map == nullptr) {
-        gs_window_init_map = new std::unordered_map<std::string, bool>;
-    }
-    auto res = gs_window_init_map->find(name);
-    if (res == gs_window_init_map->end()) {
-        gs_window_init_map->insert(std::make_pair(std::string(name), false));
-    }
-    else if (res->second == false) {
-        auto window = ImGui::FindWindowByName(name);
-        (*gs_window_init_map)[name] = internal::SetWindowTop(window, top);
-    }
-    return ImGui::Begin(name, p_open, flags);
-}
-
-void End() {
-    ImGui::End();
-}
 
 } // namespace ImGuiEx
 
@@ -230,6 +181,7 @@ int WinMain(
 
 
         // Rendering
+
         ImGui::Render();
         const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
@@ -249,6 +201,8 @@ int WinMain(
         if (gs_exit_application) {
             break;
         }
+
+        ImGuiEx::SlowDown();
     }
 
     ImGuiExit();
