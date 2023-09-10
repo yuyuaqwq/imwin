@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <string>
 #include <exception>
-
+#include <functional>
 
 #ifndef IMGUI_EX_CPP
 #include <imgui/imgui.h>
@@ -54,49 +54,52 @@ static bool SetWindowTop(ImGuiWindow* window, bool top) {
 } // namespace internal
 
 
-#define IMGUI_EX_EXPAND_UNIT_DECLARATION() \
-    bool end_expand_; \
-    bool expand_; \
+class Expandable {
+public:
+    Expandable() {
+        end_expand_ = false;
+        expand_ = false;
+    }
 
-#define IMGUI_EX_EXPAND_UNIT_EVENT_DEFINITION() \
-    template <typename EventBlock> \
-    void ExpandEvent(EventBlock expand) { \
-        if (expand_ == true && expand_ != end_expand_) { \
-            expand(); \
-        } \
-    } \
-    \
-    template <typename EventBlock> \
-    void CollapsingEvent(EventBlock collapsing) { \
-        if (expand_ == false && expand_ != end_expand_) { \
-            collapsing(); \
-        } \
-    } \
+    void ExpandUpdate(std::function<void()> update) {
+        if (expand_ == true) { 
+            update(); 
+        }
+    }
 
-#define IMGUI_EX_EXPAND_UNIT_UPDATE_DEFINITION(exp) \
-    template <typename UpdateBlock> \
-    void ExpandUpdate(UpdateBlock expand) { \
-        if (exp expand_ == true) { \
-            expand(); \
-        } \
-    } \
-    \
-    template <typename UpdateBlock> \
-    void CollapsingUpdate(UpdateBlock collapsing) { \
-        if (exp expand_ == false) { \
-            collapsing(); \
-        } \
-    } \
+    void CollapsingUpdate(std::function<void()> update) {
+        if (expand_ == false) {
+            update();
+        }
+    }
 
+    void ExpandEvent(std::function<void()> event) { \
+        if (expand_ == true && expand_ != end_expand_) {
+            event();
+        }
+    }
+    
+    void CollapsingEvent(std::function<void()> event) {
+        if (expand_ == false && expand_ != end_expand_) {
+            event();
+        }
+    }
+
+protected:
+    bool end_expand_;
+    bool expand_;
+};
+
+    
 
 /*
 * Event设计原则
-* 当前帧对组件的Control，所有事件都要留到下一帧才能触发
+* 当前帧对组件的Control，所有会对Event产生影响的场景都要留到下一帧才能触发
 */
 
-class Unit {
+class Widget {
 public:
-    Unit(const std::string& label) : label_(label) {
+    Widget(const std::string& label) : label_(label) {
         entry_disabled_ = false;
         end_disabled_ = false;
         disabled_ = false;
@@ -121,23 +124,21 @@ public:
     }
 
 
-    template <typename EventBlock>
-    void InitEvent(EventBlock init) {
+    void InitEvent(std::function<void()> init) {
         if (!init_) {
             init_ = true;
             init();
         }
     }
 
-    template <typename EventBlock>
-    void DisableEvent(EventBlock event) {
+    void DisableEvent(std::function<void()> event) {
         if (disabled_ == true && disabled_ != end_disabled_) {
             event();
         }
     }
 
-    template <typename EventBlock>
-    void EnableEvent(EventBlock event) {
+
+    void EnableEvent(std::function<void()> event) {
         if (disabled_ == false && disabled_ != end_disabled_) {
             event();
         }
@@ -176,9 +177,11 @@ private:
 
 
 
-class Window : public Unit {
+class Window : public Widget,
+               public Expandable
+{
 public:
-    Window(const std::string& label, bool main = false, bool create = true, ImGuiWindowFlags flags = 0) : Unit(label) {
+    Window(const std::string& label, bool main = false, bool create = true, ImGuiWindowFlags flags = 0) : Widget(label) {
         window_ = nullptr;
         main_ = main;
         end_top_ = true;
@@ -188,9 +191,6 @@ public:
         end_create_ = false;
         create_ = create;
 
-        end_expand_ = false;
-        expand_ = false;
-
         entry_ = false;
 
         end_flags_ = flags;
@@ -198,7 +198,7 @@ public:
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         
         if (window_ == nullptr) {
             window_ = ImGui::FindWindowByName(GetLabel().c_str());
@@ -241,49 +241,42 @@ public:
             }
         }
         end_expand_ = expand_;
-        Unit::End();
+        Widget::End();
     }
 
     /*
     * Update
     */
-    template <typename UpdateBlock>
-    void CreateUpdate(UpdateBlock create) {
+    void CreateUpdate(std::function<void()> event) {
         if (create_) {
-            create();
+            event();
         }
     }
 
-    template <typename UpdateBlock>
-    void CloseUpdate(UpdateBlock close) {
+    void CloseUpdate(std::function<void()> close) {
         if (!create_) {
             close();
         }
     }
 
-    IMGUI_EX_EXPAND_UNIT_UPDATE_DEFINITION(create_ == true && );
 
     /*
     * Event
     */
 
-    template <typename EventBlock>
-    void CreateEvent(EventBlock open) {
+    void CreateEvent(std::function<void()> event) {
         if (end_create_ == false && create_ == true) {
-            open();
+            event();
         }
     }
 
-    template <typename EventBlock>
-    void CloseEvent(EventBlock close) {
+    void CloseEvent(std::function<void()> event) {
         if (end_create_ == true && create_ == false) {
-            close();
+            event();
         }
     }
 
-    IMGUI_EX_EXPAND_UNIT_EVENT_DEFINITION();
 
-    
     /*
     * Control
     */
@@ -366,21 +359,19 @@ private:
     bool end_create_;
     bool create_;
 
-    IMGUI_EX_EXPAND_UNIT_DECLARATION();
-
     ImGuiWindowFlags end_flags_;
     ImGuiWindowFlags flags_;
 };
 
-class Button : public Unit {
+class Button : public Widget {
 public:
-    Button(const std::string& label) : Unit(label) {
+    Button(const std::string& label) : Widget(label) {
         click_ = false;
         control_click_ = false;
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         click_ = ImGui::Button(GetLabel().c_str());
         if (control_click_) {
             click_ = true;
@@ -389,16 +380,15 @@ public:
     }
 
     void End() {
-        Unit::End();
+        Widget::End();
     }
 
     /*
     * Event
     */
-    template <typename EventBlock>
-    void ClickEvent(EventBlock click) {
+    void ClickEvent(std::function<void()> event) {
         if (click_ == true) {
-            click();
+            event();
         }
     }
 
@@ -416,9 +406,11 @@ private:
 };
 
 template<class Element = std::string>
-class Combo : public Unit {
+class Combo : public Widget,
+              public Expandable
+{
 public:
-    Combo(const std::string& label) : Unit(label) {
+    Combo(const std::string& label) : Widget(label) {
         end_select_index_ = -1;
         select_index_ = -1;
 
@@ -427,7 +419,7 @@ public:
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         expand_ = ImGui::BeginCombo(GetLabel().c_str(), select_label_.c_str());
     }
 
@@ -437,14 +429,13 @@ public:
         }
         end_expand_ = expand_;
         end_select_index_ = select_index_;
-        Unit::End();
+        Widget::End();
     }
 
     /*
     * Update
     */
-    template <typename UpdateBlock>
-    void InsertUpdate(UpdateBlock insert) {
+    void InsertUpdate(std::function<std::string(Element&)> insert) {
         if (expand_ == false) {
             return;
         }
@@ -471,12 +462,9 @@ public:
     /*
     * Event
     */
-    IMGUI_EX_EXPAND_UNIT_EVENT_DEFINITION();
-
-    template <typename EventBlock>
-    void SelectEvent(EventBlock select) {
+    void SelectEvent(std::function<void()> event) {
         if (end_select_index_ != select_index_) {
-            select();
+            event();
         }
     }
 
@@ -514,19 +502,17 @@ private:
     int select_index_;
     std::string select_label_;
 
-    IMGUI_EX_EXPAND_UNIT_DECLARATION();
-
 };
 
-class InputText : public Unit {
+class InputText : public Widget {
 public:
-    InputText(const std::string& label, size_t text_size) : Unit(label), text_(text_size, '\0') {
+    InputText(const std::string& label, size_t text_size) : Widget(label), text_(text_size, '\0') {
         end_input_ = false;
         input_ = false;
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         if (ImGui::InputText(GetLabel().c_str(), (char*)text_.c_str(), text_.size())) {
             input_ = true;
         } else {
@@ -536,16 +522,15 @@ public:
 
     void End() {
         end_input_ = input_;
-        Unit::End();
+        Widget::End();
     }
 
     /*
     * Event
     */
-    template <typename EventBlock>
-    void InputEvent(EventBlock input) {
+    void InputEvent(std::function<void()> event) {
         if (input_ == true && input_ != end_input_) {
-            input();
+            event();
         }
     }
 
@@ -564,9 +549,9 @@ private:
     bool input_;
 };
 
-class InputTextMultiline : public Unit {
+class InputTextMultiline : public Widget {
 public:
-    InputTextMultiline(const std::string& label, const std::string& text = "", ImGuiInputTextFlags flags = 0) : Unit(label), size_(-FLT_MIN, -FLT_MIN) {
+    InputTextMultiline(const std::string& label, const std::string& text = "", ImGuiInputTextFlags flags = 0) : Widget(label), size_(-FLT_MIN, -FLT_MIN) {
         end_input_ = false;
         input_ = false;
 
@@ -578,7 +563,7 @@ public:
         if (text_.empty()) {
             text_.push_back('\0');
         }
-        Unit::Begin();
+        Widget::Begin();
         if (ImGui::InputTextMultiline(GetLabel().c_str(), text_.begin(), text_.size(), size_, flags_, ResizeCallback, &text_)) {
             input_ = true;
         }
@@ -589,16 +574,15 @@ public:
 
     void End() {
         end_input_ = input_;
-        Unit::End();
+        Widget::End();
     }
 
     /*
     * Event
     */
-    template <typename EventBlock>
-    void InputEvent(EventBlock input) {
+    void InputEvent(std::function<void()> event) {
         if (input_ == true && input_ != end_input_) {
-            input();
+            event();
         }
     }
 
@@ -651,20 +635,20 @@ private:
     ImGuiInputTextFlags flags_;
 };
 
-class Text : public Unit {
+class Text : public Widget {
 public:
     template<typename ... Args>
-    Text(const char* fmt, Args... args) : Unit(fmt) {
+    Text(const char* fmt, Args... args) : Widget(fmt) {
         
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         ImGui::Text(GetLabel().c_str());
     }
 
     void End() {
-        Unit::End();
+        Widget::End();
     }
 
 
@@ -680,47 +664,47 @@ private:
     std::string text_;
 };
 
-class SeparatorText : public Unit {
+class SeparatorText : public Widget {
 public:
-    SeparatorText(const std::string& label) : Unit(label) {
+    SeparatorText(const std::string& label) : Widget(label) {
         
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         ImGui::SeparatorText(GetLabel().c_str());
     }
 
     void End() {
-        Unit::End();
+        Widget::End();
     }
 };
 
-class BulletText : public Unit {
+class BulletText : public Widget {
 public:
     template<typename ... Args>
-    BulletText(const char* fmt, Args... args) : Unit(fmt) {
+    BulletText(const char* fmt, Args... args) : Widget(fmt) {
         ImGui:;BulletText(fmt, args...);
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         ImGui::BulletText(GetLabel().c_str());
     }
 
     void End() {
-        Unit::End();
+        Widget::End();
     }
 };
 
-class HelpMarker : public Unit {
+class HelpMarker : public Widget {
 public:
-    HelpMarker(const std::string& title, const std::string& desc) : Unit(title), desc_(desc) {
+    HelpMarker(const std::string& title, const std::string& desc) : Widget(title), desc_(desc) {
         
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         
         ImGui::TextDisabled(GetLabel().c_str());
         if (ImGui::BeginItemTooltip()) {
@@ -732,7 +716,7 @@ public:
     }
 
     void End() {
-        Unit::End();
+        Widget::End();
     }
 
 private:
@@ -740,46 +724,39 @@ private:
 };
 
 
-class CollapsingHeader : public Unit {
+class CollapsingHeader : public Widget,
+                         public Expandable
+{
 public:
-    CollapsingHeader(const std::string& label) : Unit(label) {
-        end_expand_ = false;
-        expand_ = false;
+    CollapsingHeader(const std::string& label) : Widget(label) {
+        
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         expand_ = ImGui::CollapsingHeader(GetLabel().c_str());
     }
 
     void End() {
         end_expand_ = expand_;
-        Unit::End();
+        Widget::End();
     }
 
-    /*
-    * Update
-    */
-    IMGUI_EX_EXPAND_UNIT_UPDATE_DEFINITION();
-
-    /*
-    * Event
-    */
-    IMGUI_EX_EXPAND_UNIT_EVENT_DEFINITION();
-
 private:
-    IMGUI_EX_EXPAND_UNIT_DECLARATION();
+
 };
 
-class TreeNode : public Unit {
+class TreeNode : public Widget,
+                 public Expandable
+{
 public:
-    TreeNode(const std::string& label) : Unit(label) {
+    TreeNode(const std::string& label) : Widget(label) {
         end_expand_ = false;
         expand_ = false;
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         expand_ = ImGui::TreeNode(GetLabel().c_str());
     }
 
@@ -788,50 +765,46 @@ public:
             ImGui::TreePop();
         }
         end_expand_ = expand_;
-        Unit::End();
+        Widget::End();
     }
 
 
     /*
     * Event
     */
-    IMGUI_EX_EXPAND_UNIT_EVENT_DEFINITION();
 private:
-    IMGUI_EX_EXPAND_UNIT_DECLARATION();
 };
 
-class CheckBox : public Unit {
+class CheckBox : public Widget {
 public:
-    CheckBox(const std::string& label, bool check = false) : Unit(label) {
+    CheckBox(const std::string& label, bool check = false) : Widget(label) {
         end_check_ = false;
         check_ = check;
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         ImGui::Checkbox(GetLabel().c_str(), &check_);
     }
 
     void End() {
         end_check_ = check_;
-        Unit::End();
+        Widget::End();
     }
 
 
     /*
     * Event
     */
-    template <typename EventBlock>
-    void CheckEvent(EventBlock check) {
+    void CheckEvent(std::function<void()> event) {
         if (end_check_ == false && check_ == true) {
-            check();
+            event();
         }
     }
 
-    template <typename EventBlock>
-    void UncheckEvent(EventBlock uncheck) {
+    void UncheckEvent(std::function<void()> event) {
         if (end_check_ == true && check_ == false) {
-            uncheck();
+            event();
         }
     }
 
@@ -848,16 +821,16 @@ private:
 };
 
 template<class Element = std::string>
-class ListBox : public Unit {
+class ListBox : public Widget {
 public:
-    ListBox(const std::string& label) : Unit(label), size_(-FLT_MIN, -FLT_MIN) {
+    ListBox(const std::string& label) : Widget(label), size_(-FLT_MIN, -FLT_MIN) {
         entry_ = false;
         end_select_index_ = -1;
         select_index_ = -1;
     }
 
     void Begin() {
-        Unit::Begin();
+        Widget::Begin();
         entry_ = ImGui::BeginListBox(GetLabel().c_str(), size_);
     }
 
@@ -865,14 +838,13 @@ public:
         if (entry_) {
             ImGui::EndListBox();
         }
-        Unit::End();
+        Widget::End();
     }
 
     /*
     * Update
     */
-    template <typename UpdateBlock>
-    void InsertUpdate(UpdateBlock insert) {
+    void InsertUpdate(std::function<std::string(Element&)> insert) {
         for (int i = 0; i < list_.size(); i++) {
             const bool is_selected = (select_index_ == i);
             auto temp = insert(list_[i]);
@@ -894,10 +866,9 @@ public:
     /*
     * Event
     */
-    template <typename EventBlock>
-    void SelectEvent(EventBlock select) {
+    void SelectEvent(std::function<void()> event) {
         if (end_select_index_ != select_index_) {
-            select();
+            event();
         }
     }
 
@@ -947,17 +918,16 @@ private:
     int select_index_;
 };
 
-class RadioButtonGroup : public Unit {
+class RadioButtonGroup : public Widget {
 public:
-    RadioButtonGroup(std::vector<std::string> label_list) : Unit(""), label_list_(label_list){
+    RadioButtonGroup(std::vector<std::string> label_list) : Widget(""), label_list_(label_list){
         push_index_ = 0;
         select_index_ = 0;
         end_select_index_ = 0;
     }
 
-    template <typename PushBlock>
-    void Begin(PushBlock push) {
-        Unit::Begin();
+    void Begin(std::function<void(size_t)> push) {
+        Widget::Begin();
         push_index_ = 0;
         for (size_t i = 0; i < label_list_.size(); i++) {
             ImGui::RadioButton(label_list_[i].c_str(), &select_index_, push_index_++);
@@ -971,15 +941,13 @@ public:
 
     void End() {
         end_select_index_ = select_index_;
-        Unit::End();
+        Widget::End();
     }
 
 
-
-    template <typename EventBlock>
-    void SelectEvent(EventBlock select) {
+    void SelectEvent(std::function<void()> event) {
         if (end_select_index_ != select_index_) {
-            select();
+            event();
         }
     }
 
