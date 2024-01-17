@@ -28,7 +28,7 @@ void ExitApplication() {
 }
 
 void SlowDown() {
-    // ²»Çå³þd3d11ËøÖ¡µÄ·½·¨£¬ÓÃSleepÏÈ»º½â
+    // ï¿½ï¿½ï¿½ï¿½ï¿½d3d11ï¿½ï¿½Ö¡ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Sleepï¿½È»ï¿½ï¿½ï¿½
     Sleep(10);
 }
 
@@ -62,7 +62,7 @@ int WinMain(
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     ::RegisterClassExW(&wc);
     //HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
-    HWND hwnd = CreateWindowEx(WS_EX_TOOLWINDOW |
+    HWND hwnd = CreateWindowExW(WS_EX_TOOLWINDOW |
         WS_EX_NOACTIVATE |
         WS_EX_TRANSPARENT |
         WS_EX_LAYERED |
